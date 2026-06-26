@@ -27,20 +27,24 @@ jobs:
         run: |
           apt-get update
           apt-get install -y docker.io
+          export DOCKER_HOST=unix:///var/run/docker.sock
           unset DOCKER_TLS_CERTDIR DOCKER_TLS_VERIFY DOCKER_CERT_PATH
           docker --version
 
       - name: Build image
         run: |
+          export DOCKER_HOST=unix:///var/run/docker.sock
           unset DOCKER_TLS_CERTDIR DOCKER_TLS_VERIFY DOCKER_CERT_PATH
           docker build --tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" .
 
       - name: Log in to registry
         run: |
+          export DOCKER_HOST=unix:///var/run/docker.sock
           unset DOCKER_TLS_CERTDIR DOCKER_TLS_VERIFY DOCKER_CERT_PATH
           echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "${{ vars.REGISTRY_HOST }}" --username "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
       - name: Push image
         run: |
+          export DOCKER_HOST=unix:///var/run/docker.sock
           unset DOCKER_TLS_CERTDIR DOCKER_TLS_VERIFY DOCKER_CERT_PATH
           docker push "${IMAGE_REPOSITORY}:${GITHUB_SHA}"
