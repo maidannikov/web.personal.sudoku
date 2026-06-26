@@ -8,6 +8,10 @@ on:
 
 env:
   IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY }}
+  DOCKER_HOST: unix:///var/run/docker.sock
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_TLS_VERIFY: ""
+  DOCKER_CERT_PATH: ""
 
 jobs:
   build-and-push:
@@ -27,6 +31,7 @@ jobs:
           apt-get update
           apt-get install -y docker.io
           docker --version
+          docker info
 
       - name: Build image
         run: docker build --tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" .
