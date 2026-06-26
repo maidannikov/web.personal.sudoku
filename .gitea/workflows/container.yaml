@@ -18,6 +18,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate configuration
+        env:
+          REGISTRY_HOST: ${{ vars.REGISTRY_HOST }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          GITOPS_USERNAME: ${{ secrets.GITOPS_USERNAME }}
+          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+        run: |
+          required_vars="IMAGE_REPOSITORY REGISTRY_HOST GITOPS_REPO_URL REGISTRY_USERNAME REGISTRY_PASSWORD GITOPS_USERNAME GITOPS_TOKEN"
+          for name in $required_vars; do
+            if [ -z "$(eval "printf '%s' \"\${$name}\"")" ]; then
+              echo "Missing required Actions variable or secret: ${name}" >&2
+              exit 1
+            fi
+          done
+
       - name: Test
         run: npm test
 
@@ -54,9 +70,13 @@ jobs:
           apt-get update
           apt-get install -y git
 
-          repo_without_scheme="${GITOPS_REPO_URL#http://}"
-          repo_without_scheme="${repo_without_scheme#https://}"
-          git clone "http://${GITOPS_USERNAME}:${GITOPS_TOKEN}@${repo_without_scheme}" gitops
+          case "$GITOPS_REPO_URL" in
+            http://*) gitops_clone_url="http://${GITOPS_USERNAME}:${GITOPS_TOKEN}@${GITOPS_REPO_URL#http://}" ;;
+            https://*) gitops_clone_url="https://${GITOPS_USERNAME}:${GITOPS_TOKEN}@${GITOPS_REPO_URL#https://}" ;;
+            *) echo "GITOPS_REPO_URL must start with http:// or https://" >&2; exit 1 ;;
+          esac
+
+          git clone "$gitops_clone_url" gitops
 
           cd gitops
           sed -i "/^image:/,/^[^ ]/ s/^  tag:.*/  tag: ${IMAGE_TAG}/" "${GITOPS_VALUES_FILE}"
