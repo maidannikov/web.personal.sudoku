@@ -28,11 +28,14 @@ jobs:
           apt-get install -y docker.io
           docker --version
 
+      - name: Set image tag
+        run: echo "IMAGE_TAG=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
       - name: Build image
-        run: docker build --tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" .
+        run: docker build --tag "${IMAGE_REPOSITORY}:${IMAGE_TAG}" .
 
       - name: Log in to registry
         run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "${{ vars.REGISTRY_HOST }}" --username "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
       - name: Push image
-        run: docker push "${IMAGE_REPOSITORY}:${GITHUB_SHA}"
+        run: docker push "${IMAGE_REPOSITORY}:${IMAGE_TAG}"
