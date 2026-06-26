@@ -22,6 +22,12 @@ jobs:
       - name: Build static bundle
         run: npm run build
 
+      - name: Install Docker CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          docker version
+
       - name: Build image
         run: docker build --tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" .
 
