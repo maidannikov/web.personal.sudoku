@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111827" />
+    <meta
+      name="description"
+      content="A polished Sudoku game with difficulty levels, notes, and hints."
+    />
+    <title>Sudoku Studio</title>
+    <link rel="stylesheet" href="./styles.css?v=9" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="start-screen" class="screen start-screen" aria-labelledby="game-title">
+        <header class="start-hero">
+          <p class="eyebrow">AI-native development challenge</p>
+          <h1 id="game-title">Sudoku Studio</h1>
+          <p class="lede">
+            Pick a difficulty and jump into a calm, keyboard-friendly Sudoku
+            board with notes, hints, and score tracking.
+          </p>
+        </header>
+
+        <div class="difficulty-grid" aria-label="Choose difficulty">
+          <button class="difficulty-card" type="button" data-start-difficulty="easy" onclick="showSudokuGame('easy')">
+            <span>Easy</span>
+            <strong>Relaxed</strong>
+            <small>More givens, good warm-up.</small>
+          </button>
+          <button class="difficulty-card featured" type="button" data-start-difficulty="medium" onclick="showSudokuGame('medium')">
+            <span>Medium</span>
+            <strong>Balanced</strong>
+            <small>The default flow.</small>
+          </button>
+          <button class="difficulty-card" type="button" data-start-difficulty="hard" onclick="showSudokuGame('hard')">
+            <span>Hard</span>
+            <strong>Focused</strong>
+            <small>Fewer anchors, more thinking.</small>
+          </button>
+          <button class="difficulty-card" type="button" data-start-difficulty="expert" onclick="showSudokuGame('expert')">
+            <span>Expert</span>
+            <strong>Brutal</strong>
+            <small>A sparse board for deep focus.</small>
+          </button>
+        </div>
+
+        <button id="continue-game" class="continue-card" type="button" hidden>
+          Continue saved game
+        </button>
+
+        <aside class="quick-rules" aria-label="How to play">
+          <strong>How to play</strong>
+          <span>Fill every row, column, and 3x3 box with digits 1 through 9.</span>
+        </aside>
+      </section>
+
+      <section id="game-screen" class="screen game-screen" aria-label="Sudoku game" hidden>
+        <header class="game-header">
+          <button id="back-to-menu" class="icon-button" type="button" aria-label="Back to difficulty selection">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <div>
+            <span class="status-label">Current puzzle</span>
+            <strong id="difficulty-label">Medium</strong>
+          </div>
+          <div class="game-time">
+            <span id="timer">00:00</span>
+            <small id="score">0 pts</small>
+          </div>
+        </header>
+
+        <section class="game-layout">
+          <section class="board-wrap" aria-label="Sudoku board">
+            <div id="pause-overlay" class="pause-overlay" hidden>
+              <strong>Paused</strong>
+              <span>Your board is hidden while the game is paused.</span>
+              <div class="overlay-actions">
+                <button id="pause-resume" type="button">Resume</button>
+                <button id="pause-menu" type="button">Exit to menu</button>
+              </div>
+            </div>
+            <div id="result-panel" class="result-panel" hidden>
+              <strong>Solved</strong>
+              <span id="result-summary">Great run.</span>
+              <div class="overlay-actions">
+                <button id="result-menu" type="button">Exit to menu</button>
+                <button id="result-new-game" type="button">New puzzle</button>
+                <button id="result-share" type="button">Share</button>
+              </div>
+            </div>
+            <div id="message" class="message" role="status">Pick a cell to begin.</div>
+            <div id="board" class="board" role="grid" aria-label="Sudoku grid"></div>
+            <div class="number-pad" aria-label="Number pad">
+              <button type="button" data-number="1">1</button>
+              <button type="button" data-number="2">2</button>
+              <button type="button" data-number="3">3</button>
+              <button type="button" data-number="4">4</button>
+              <button type="button" data-number="5">5</button>
+              <button type="button" data-number="6">6</button>
+              <button type="button" data-number="7">7</button>
+              <button type="button" data-number="8">8</button>
+              <button type="button" data-number="9">9</button>
+              <button type="button" data-number="0">Clear</button>
+            </div>
+          </section>
+
+          <aside class="game-rail" aria-label="Game status and actions">
+            <button id="notes-toggle" class="notes-button" type="button" aria-pressed="false">
+              Notes off
+            </button>
+
+            <div class="action-bar">
+              <button id="new-game" class="icon-button" type="button" aria-label="New puzzle">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M4 4h16v16H4z" />
+                  <path d="M8 8h8M8 12h8M8 16h8" />
+                </svg>
+              </button>
+              <button id="check-game" class="icon-button" type="button" aria-label="Check puzzle">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </button>
+              <button id="hint" class="icon-button" type="button" aria-label="Show hint">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M12 3a6 6 0 0 0-3 11v3h6v-3a6 6 0 0 0-3-11z" />
+                  <path d="M10 21h4" />
+                </svg>
+              </button>
+              <button id="undo" class="icon-button" type="button" aria-label="Undo">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M9 7l-5 5 5 5" />
+                  <path d="M4 12h11a5 5 0 0 1 5 5" />
+                </svg>
+              </button>
+              <button id="redo" class="icon-button" type="button" aria-label="Redo">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M15 7l5 5-5 5" />
+                  <path d="M20 12H9a5 5 0 0 0-5 5" />
+                </svg>
+              </button>
+              <button id="pause" class="icon-button" type="button" aria-label="Pause">
+                <svg class="pause-icon" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M8 5v14M16 5v14" />
+                </svg>
+                <svg class="play-icon" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </button>
+              <button id="reset" class="icon-button" type="button" aria-label="Reset puzzle">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M20 12a8 8 0 1 1-2.3-5.7" />
+                  <path d="M20 4v6h-6" />
+                </svg>
+              </button>
+              <button id="share" class="icon-button" type="button" aria-label="Share result">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M18 8a3 3 0 1 0-2.8-4" />
+                  <path d="M6 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+                  <path d="M18 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+                  <path d="M8.7 14.8l6.6 3.4M15.3 5.8 8.7 9.2" />
+                </svg>
+              </button>
+            </div>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      window.__sudokuStartDifficulty = null;
+      function showSudokuGame(difficulty) {
+        window.__sudokuStartDifficulty = difficulty || "medium";
+        document.body.classList.remove("is-start");
+        document.body.classList.add("is-game");
+        document.getElementById("start-screen").hidden = true;
+        document.getElementById("game-screen").hidden = false;
+        var label = document.getElementById("difficulty-label");
+        var message = document.getElementById("message");
+        var names = { easy: "Easy", medium: "Medium", hard: "Hard", expert: "Expert" };
+        var difficultyName = names[window.__sudokuStartDifficulty] || "Medium";
+        if (label) {
+          label.textContent = difficultyName;
+        }
+        if (message) {
+          message.textContent = "Preparing " + difficultyName + " puzzle...";
+        }
+      }
+      document.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-start-difficulty]");
+        if (button) {
+          showSudokuGame(button.dataset.startDifficulty);
+        }
+      });
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations()
+          .then((registrations) => registrations.forEach((registration) => registration.unregister()))
+          .catch(() => {});
+      }
+      if ("caches" in window) {
+        caches.keys()
+          .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+          .catch(() => {});
+      }
+    </script>
+    <script defer src="./src/bundle.js?v=11"></script>
+  </body>
+</html>

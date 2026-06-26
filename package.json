@@ -1,0 +1,11 @@
+{
+  "name": "sudoku-challenge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-bundle.cjs",
+    "start": "python3 -m http.server 4173",
+    "test": "node --test"
+  }
+}

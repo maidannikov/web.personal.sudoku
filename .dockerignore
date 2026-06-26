@@ -1,0 +1,10 @@
+.git
+.gitea
+docs
+test
+README.md
+ARCHITECTURE.md
+RETROSPECTIVE.md
+SPEC.md
+node_modules
+npm-debug.log

@@ -1,0 +1,32 @@
+name: container
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test
+        run: npm test
+
+      - name: Build static bundle
+        run: npm run build
+
+      - name: Build image
+        run: docker build --tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" .
+
+      - name: Log in to registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "${{ vars.REGISTRY_HOST }}" --username "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Push image
+        run: docker push "${IMAGE_REPOSITORY}:${GITHUB_SHA}"
