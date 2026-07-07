@@ -13,7 +13,7 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: sudoku-ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,12 +40,6 @@ jobs:
       - name: Build static bundle
         run: npm run build
 
-      - name: Install Docker CLI
-        run: |
-          apt-get update
-          apt-get install -y docker.io
-          docker --version
-
       - name: Set image tag
         run: echo "IMAGE_TAG=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
 
@@ -67,9 +61,6 @@ jobs:
           GIT_COMMITTER_NAME: gitea-actions
           GIT_COMMITTER_EMAIL: gitea-actions@git.maidannikov.site
         run: |
-          apt-get update
-          apt-get install -y git
-
           case "$GITOPS_REPO_URL" in
             http://*) gitops_clone_url="http://${GITOPS_USERNAME}:${GITOPS_TOKEN}@${GITOPS_REPO_URL#http://}" ;;
             https://*) gitops_clone_url="https://${GITOPS_USERNAME}:${GITOPS_TOKEN}@${GITOPS_REPO_URL#https://}" ;;
