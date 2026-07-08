@@ -11,12 +11,15 @@ import {
 } from "../src/sudoku.js";
 import {
   applyHint,
+  completedNumbers,
   createGame,
   elapsedSeconds,
   filledCount,
+  loadGame,
   placeValue,
   redo,
   resetGame,
+  saveGame,
   score,
   setSelectedCell,
   toggleNotesMode,
@@ -104,16 +107,134 @@ test("pause freezes elapsed time until resumed", () => {
   assert.equal(elapsedSeconds(state, 17000), 6);
 });
 
-test("score decreases with mistakes, hints, and time", () => {
-  const state = createGame("expert", seededRandom(17));
-  const worse = {
-    ...state,
-    mistakes: 2,
-    hints: 1,
-    startedAt: Date.now() - 120000
+test("score starts at zero and scales by difficulty", () => {
+  let easy = createGame("easy", seededRandom(17));
+  const easyIndex = easy.puzzle.findIndex((value) => value === 0);
+  easy = setSelectedCell(easy, easyIndex);
+  easy = placeValue(easy, easy.solution[easyIndex]);
+
+  let expert = createGame("expert", seededRandom(17));
+  const expertIndex = expert.puzzle.findIndex((value) => value === 0);
+  expert = setSelectedCell(expert, expertIndex);
+  expert = placeValue(expert, expert.solution[expertIndex]);
+
+  assert.equal(score(createGame("medium", seededRandom(21))), 0);
+  assert.equal(score(easy), 10);
+  assert.equal(score(expert), 55);
+});
+
+test("hints do not award manual placement points", () => {
+  const state = applyHint(createGame("medium", seededRandom(23)));
+
+  assert.equal(state.hints, 1);
+  assert.equal(score(state), 0);
+});
+
+test("completedNumbers only closes correctly placed digits", () => {
+  const base = createGame("medium", seededRandom(24));
+  const puzzle = Array(CELL_COUNT).fill(0);
+  const completeGrid = Array(CELL_COUNT).fill(0);
+  const eightIndexes = base.solution
+    .map((value, index) => (value === 8 ? index : -1))
+    .filter((index) => index >= 0);
+  const nonEightIndex = base.solution.findIndex((value) => value !== 8);
+
+  eightIndexes.forEach((index) => {
+    completeGrid[index] = 8;
+  });
+
+  const completed = {
+    ...base,
+    puzzle,
+    grid: completeGrid,
+    selectedIndex: nonEightIndex
   };
 
-  assert.ok(score(worse) < score(state));
+  assert.deepEqual(completedNumbers(completed), [8]);
+
+  const wrongGrid = Array(CELL_COUNT).fill(0);
+  eightIndexes.slice(1).forEach((index) => {
+    wrongGrid[index] = 8;
+  });
+  wrongGrid[nonEightIndex] = 8;
+
+  assert.equal(wrongGrid.filter((value) => value === 8).length, 9);
+  assert.equal(completedNumbers({ ...base, puzzle, grid: wrongGrid }).includes(8), false);
+});
+
+test("placeValue blocks numbers that are already complete", () => {
+  const base = createGame("medium", seededRandom(26));
+  const puzzle = Array(CELL_COUNT).fill(0);
+  const grid = Array(CELL_COUNT).fill(0);
+  const eightIndexes = base.solution
+    .map((value, index) => (value === 8 ? index : -1))
+    .filter((index) => index >= 0);
+  const selectedIndex = base.solution.findIndex((value) => value !== 8);
+
+  eightIndexes.forEach((index) => {
+    grid[index] = 8;
+  });
+
+  const state = {
+    ...base,
+    puzzle,
+    grid,
+    selectedIndex
+  };
+  const next = placeValue(state, 8);
+
+  assert.equal(next.grid[selectedIndex], 0);
+  assert.equal(next.message, "All 8s are already placed.");
+});
+
+test("score adds speed bonus only after completion", () => {
+  const state = createGame("medium", seededRandom(25));
+  const openCount = state.puzzle.filter((value) => value === 0).length;
+  const solvedFast = {
+    ...state,
+    grid: state.solution.slice(),
+    completedAt: state.startedAt + 120000
+  };
+  const solvedSlow = {
+    ...state,
+    grid: state.solution.slice(),
+    completedAt: state.startedAt + 900000
+  };
+
+  assert.equal(score({ ...state, grid: state.solution.slice() }), openCount * 20);
+  assert.equal(score(solvedFast), openCount * 20 + 480);
+  assert.equal(score(solvedSlow), openCount * 20);
+});
+
+test("saveGame clears completed games instead of persisting them", () => {
+  const originalLocalStorage = globalThis.localStorage;
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem(key) {
+      return store.get(key) ?? null;
+    },
+    removeItem(key) {
+      store.delete(key);
+    },
+    setItem(key, value) {
+      store.set(key, value);
+    }
+  };
+
+  try {
+    const state = createGame("easy", seededRandom(19));
+    saveGame(state);
+    assert.ok(loadGame());
+
+    saveGame({ ...state, completedAt: Date.now() });
+    assert.equal(loadGame(), null);
+  } finally {
+    if (originalLocalStorage === undefined) {
+      delete globalThis.localStorage;
+    } else {
+      globalThis.localStorage = originalLocalStorage;
+    }
+  }
 });
 
 function seededRandom(seed) {

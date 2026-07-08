@@ -6,9 +6,11 @@ import {
 } from "./sudoku.js";
 import {
   applyHint,
+  completedNumbers,
   createGame,
   difficultyLabel,
   elapsedSeconds,
+  filledCount,
   loadGame,
   placeValue,
   redo,
@@ -34,6 +36,10 @@ const pauseOverlay = document.querySelector("#pause-overlay");
 const resultPanel = document.querySelector("#result-panel");
 const resultSummary = document.querySelector("#result-summary");
 const scoreLabel = document.querySelector("#score");
+const filledCountLabel = document.querySelector("#filled-count");
+const mistakesCount = document.querySelector("#mistakes-count");
+const hintsCount = document.querySelector("#hints-count");
+const numberButtons = [...document.querySelectorAll("[data-number]")];
 
 let state = loadGame();
 let screen = window.__sudokuStartDifficulty ? "game" : "start";
@@ -78,6 +84,7 @@ function bindControls() {
 
   continueGame.addEventListener("click", () => {
     screen = "game";
+    scrollToTop();
     render();
   });
 
@@ -94,10 +101,22 @@ function bindControls() {
       return;
     }
 
+    const wrongCount = state.grid.filter((value, index) => value && value !== state.solution[index]).length;
+    const emptyCount = state.grid.filter((value) => value === 0).length;
+
     if (isComplete(state.grid, state.solution)) {
       state = { ...state, completedAt: state.completedAt ?? Date.now(), message: "Solved. Beautiful work." };
+      safeSaveGame();
+    } else if (wrongCount > 0) {
+      state = {
+        ...state,
+        message: `${wrongCount} ${wrongCount === 1 ? "cell needs" : "cells need"} another look.`
+      };
     } else {
-      state = { ...state, message: "Not solved yet. Keep going." };
+      state = {
+        ...state,
+        message: `${emptyCount} ${emptyCount === 1 ? "cell" : "cells"} left.`
+      };
     }
     render();
   });
@@ -192,7 +211,7 @@ function bindControls() {
     startNewGame(state?.difficulty ?? "medium");
   });
 
-  document.querySelectorAll("[data-number]").forEach((button) => {
+  numberButtons.forEach((button) => {
     button.addEventListener("click", () => {
       applyNumber(Number(button.dataset.number));
     });
@@ -236,6 +255,7 @@ function goToMenu() {
     state = togglePause(state);
   }
   safeSaveGame();
+  scrollToTop();
   render();
 }
 
@@ -247,6 +267,7 @@ function startNewGame(difficulty) {
   screen = "game";
   state = null;
   loadingDifficulty = difficulty;
+  scrollToTop();
   render();
   finishStartingGame(difficulty);
 }
@@ -324,6 +345,7 @@ function render() {
   const selectedValue = state.grid[state.selectedIndex];
   const peers = peersOf(state.selectedIndex);
   const conflicts = new Set();
+  const completedNumberSet = new Set(completedNumbers(state));
   const paused = Boolean(state.pausedAt);
 
   for (let index = 0; index < CELL_COUNT; index += 1) {
@@ -385,14 +407,34 @@ function render() {
   difficultyText.textContent = difficultyLabel(state.difficulty);
   timer.textContent = formatTime(elapsedSeconds(state));
   scoreLabel.textContent = `${score(state)} pts`;
+  filledCountLabel.textContent = `${filledCount(state)}/81`;
+  mistakesCount.textContent = String(state.mistakes);
+  hintsCount.textContent = String(state.hints);
   notesToggle.ariaPressed = String(state.notesMode);
   notesToggle.textContent = `Notes ${state.notesMode ? "on" : "off"}`;
   document.querySelector("#pause").ariaLabel = state.pausedAt ? "Resume" : "Pause";
+  document.querySelector("#pause").title = state.pausedAt ? "Resume" : "Pause";
   document.querySelector("#pause").classList.toggle("is-paused", Boolean(state.pausedAt));
   document.querySelector("#undo").disabled = state.undoStack.length === 0;
   document.querySelector("#redo").disabled = state.redoStack.length === 0;
   document.querySelector("#share").disabled = !state.completedAt;
   document.querySelector("#result-share").disabled = !state.completedAt;
+  numberButtons.forEach((button) => {
+    const value = Number(button.dataset.number);
+    const complete = value > 0 && completedNumberSet.has(value);
+    button.disabled = paused || Boolean(state.completedAt) || complete;
+    button.classList.toggle("is-complete", complete);
+    button.ariaLabel = value === 0
+      ? "Clear cell"
+      : complete
+        ? `${value} complete`
+        : `Place ${value}`;
+    button.title = value === 0
+      ? "Clear cell"
+      : complete
+        ? `${value} complete`
+        : `Place ${value}`;
+  });
   pauseOverlay.hidden = !paused;
   resultPanel.hidden = !state.completedAt;
   resultSummary.textContent = `Finished ${difficultyLabel(state.difficulty)} in ${formatTime(elapsedSeconds(state))} with ${score(state)} points.`;
@@ -401,7 +443,7 @@ function render() {
   message.className = "message";
   if (state.completedAt) {
     message.classList.add("good");
-  } else if (state.message.toLowerCase().includes("conflict")) {
+  } else if (state.message.toLowerCase().includes("conflict") || state.message.toLowerCase().includes("another look")) {
     message.classList.add("bad");
   }
 }
@@ -411,6 +453,9 @@ function renderLoadingState() {
   difficultyText.textContent = label;
   timer.textContent = "00:00";
   scoreLabel.textContent = "0 pts";
+  filledCountLabel.textContent = "0/81";
+  mistakesCount.textContent = "0";
+  hintsCount.textContent = "0";
   notesToggle.ariaPressed = "false";
   notesToggle.textContent = "Notes off";
   message.textContent = loadingDifficulty ? `Preparing ${label} puzzle...` : "Choose a difficulty to start.";
@@ -422,6 +467,10 @@ function renderLoadingState() {
   document.querySelector("#share").disabled = true;
   document.querySelector("#result-share").disabled = true;
   document.querySelector("#pause").classList.remove("is-paused");
+  numberButtons.forEach((button) => {
+    button.disabled = true;
+    button.classList.remove("is-complete");
+  });
   cells.forEach((cell) => {
     cell.className = "cell paused";
     cell.textContent = "";
@@ -438,6 +487,10 @@ function safeSaveGame() {
   } catch {
     // Storage can fail in private modes; gameplay should still continue.
   }
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
 function formatTime(seconds) {

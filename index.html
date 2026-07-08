@@ -9,51 +9,43 @@
       content="A polished Sudoku game with difficulty levels, notes, and hints."
     />
     <title>Sudoku Studio</title>
-    <link rel="stylesheet" href="./styles.css?v=9" />
+    <link rel="stylesheet" href="./styles.css?v=10" />
   </head>
   <body>
     <main class="app-shell">
       <section id="start-screen" class="screen start-screen" aria-labelledby="game-title">
         <header class="start-hero">
-          <p class="eyebrow">AI-native development challenge</p>
+          <p class="eyebrow">Classic Sudoku</p>
           <h1 id="game-title">Sudoku Studio</h1>
-          <p class="lede">
-            Pick a difficulty and jump into a calm, keyboard-friendly Sudoku
-            board with notes, hints, and score tracking.
-          </p>
+          <p class="lede">Choose a puzzle.</p>
         </header>
 
         <div class="difficulty-grid" aria-label="Choose difficulty">
-          <button class="difficulty-card" type="button" data-start-difficulty="easy" onclick="showSudokuGame('easy')">
+          <button class="difficulty-card" type="button" data-start-difficulty="easy">
             <span>Easy</span>
             <strong>Relaxed</strong>
-            <small>More givens, good warm-up.</small>
+            <small>42 givens</small>
           </button>
-          <button class="difficulty-card featured" type="button" data-start-difficulty="medium" onclick="showSudokuGame('medium')">
+          <button class="difficulty-card featured" type="button" data-start-difficulty="medium">
             <span>Medium</span>
             <strong>Balanced</strong>
-            <small>The default flow.</small>
+            <small>34 givens</small>
           </button>
-          <button class="difficulty-card" type="button" data-start-difficulty="hard" onclick="showSudokuGame('hard')">
+          <button class="difficulty-card" type="button" data-start-difficulty="hard">
             <span>Hard</span>
             <strong>Focused</strong>
-            <small>Fewer anchors, more thinking.</small>
+            <small>28 givens</small>
           </button>
-          <button class="difficulty-card" type="button" data-start-difficulty="expert" onclick="showSudokuGame('expert')">
+          <button class="difficulty-card" type="button" data-start-difficulty="expert">
             <span>Expert</span>
             <strong>Brutal</strong>
-            <small>A sparse board for deep focus.</small>
+            <small>24 givens</small>
           </button>
         </div>
 
         <button id="continue-game" class="continue-card" type="button" hidden>
           Continue saved game
         </button>
-
-        <aside class="quick-rules" aria-label="How to play">
-          <strong>How to play</strong>
-          <span>Fill every row, column, and 3x3 box with digits 1 through 9.</span>
-        </aside>
       </section>
 
       <section id="game-screen" class="screen game-screen" aria-label="Sudoku game" hidden>
@@ -109,41 +101,56 @@
           </section>
 
           <aside class="game-rail" aria-label="Game status and actions">
+            <div class="stat-strip" aria-label="Game stats">
+              <span>
+                <small>Filled</small>
+                <strong id="filled-count">0/81</strong>
+              </span>
+              <span>
+                <small>Errors</small>
+                <strong id="mistakes-count">0</strong>
+              </span>
+              <span>
+                <small>Hints</small>
+                <strong id="hints-count">0</strong>
+              </span>
+            </div>
+
             <button id="notes-toggle" class="notes-button" type="button" aria-pressed="false">
               Notes off
             </button>
 
             <div class="action-bar">
-              <button id="new-game" class="icon-button" type="button" aria-label="New puzzle">
+              <button id="new-game" class="icon-button" type="button" aria-label="New puzzle" title="New puzzle">
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M4 4h16v16H4z" />
                   <path d="M8 8h8M8 12h8M8 16h8" />
                 </svg>
               </button>
-              <button id="check-game" class="icon-button" type="button" aria-label="Check puzzle">
+              <button id="check-game" class="icon-button" type="button" aria-label="Check puzzle" title="Check puzzle">
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
               </button>
-              <button id="hint" class="icon-button" type="button" aria-label="Show hint">
+              <button id="hint" class="icon-button" type="button" aria-label="Show hint" title="Show hint">
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M12 3a6 6 0 0 0-3 11v3h6v-3a6 6 0 0 0-3-11z" />
                   <path d="M10 21h4" />
                 </svg>
               </button>
-              <button id="undo" class="icon-button" type="button" aria-label="Undo">
+              <button id="undo" class="icon-button" type="button" aria-label="Undo" title="Undo">
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M9 7l-5 5 5 5" />
                   <path d="M4 12h11a5 5 0 0 1 5 5" />
                 </svg>
               </button>
-              <button id="redo" class="icon-button" type="button" aria-label="Redo">
+              <button id="redo" class="icon-button" type="button" aria-label="Redo" title="Redo">
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M15 7l5 5-5 5" />
                   <path d="M20 12H9a5 5 0 0 0-5 5" />
                 </svg>
               </button>
-              <button id="pause" class="icon-button" type="button" aria-label="Pause">
+              <button id="pause" class="icon-button" type="button" aria-label="Pause" title="Pause">
                 <svg class="pause-icon" aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M8 5v14M16 5v14" />
                 </svg>
@@ -151,13 +158,13 @@
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </button>
-              <button id="reset" class="icon-button" type="button" aria-label="Reset puzzle">
+              <button id="reset" class="icon-button" type="button" aria-label="Reset puzzle" title="Reset puzzle">
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M20 12a8 8 0 1 1-2.3-5.7" />
                   <path d="M20 4v6h-6" />
                 </svg>
               </button>
-              <button id="share" class="icon-button" type="button" aria-label="Share result">
+              <button id="share" class="icon-button" type="button" aria-label="Share result" title="Share result">
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M18 8a3 3 0 1 0-2.8-4" />
                   <path d="M6 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
@@ -173,29 +180,6 @@
 
     <script>
       window.__sudokuStartDifficulty = null;
-      function showSudokuGame(difficulty) {
-        window.__sudokuStartDifficulty = difficulty || "medium";
-        document.body.classList.remove("is-start");
-        document.body.classList.add("is-game");
-        document.getElementById("start-screen").hidden = true;
-        document.getElementById("game-screen").hidden = false;
-        var label = document.getElementById("difficulty-label");
-        var message = document.getElementById("message");
-        var names = { easy: "Easy", medium: "Medium", hard: "Hard", expert: "Expert" };
-        var difficultyName = names[window.__sudokuStartDifficulty] || "Medium";
-        if (label) {
-          label.textContent = difficultyName;
-        }
-        if (message) {
-          message.textContent = "Preparing " + difficultyName + " puzzle...";
-        }
-      }
-      document.addEventListener("click", function (event) {
-        var button = event.target.closest("[data-start-difficulty]");
-        if (button) {
-          showSudokuGame(button.dataset.startDifficulty);
-        }
-      });
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.getRegistrations()
           .then((registrations) => registrations.forEach((registration) => registration.unregister()))
@@ -207,6 +191,6 @@
           .catch(() => {});
       }
     </script>
-    <script defer src="./src/bundle.js?v=11"></script>
+    <script defer src="./src/bundle.js?v=14"></script>
   </body>
 </html>

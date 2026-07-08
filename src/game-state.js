@@ -2,11 +2,11 @@ import { CELL_COUNT, DIFFICULTIES, generatePuzzle, isComplete } from "./sudoku.j
 
 const STORAGE_KEY = "sudoku-studio-state-v2";
 const HISTORY_LIMIT = 80;
-const DIFFICULTY_SCORE = {
-  easy: 800,
-  medium: 1200,
-  hard: 1700,
-  expert: 2300
+const DIFFICULTY_SCORING = {
+  easy: { cell: 10, speed: 250, targetSeconds: 360 },
+  medium: { cell: 20, speed: 600, targetSeconds: 600 },
+  hard: { cell: 35, speed: 1100, targetSeconds: 900 },
+  expert: { cell: 55, speed: 1800, targetSeconds: 1200 }
 };
 
 export function createGame(difficulty = "medium", random = Math.random, mode = "random") {
@@ -18,6 +18,7 @@ export function createGame(difficulty = "medium", random = Math.random, mode = "
     solution: puzzle.solution,
     grid: puzzle.puzzle.slice(),
     notes: createEmptyNotes(),
+    hintedIndexes: [],
     undoStack: [],
     redoStack: [],
     selectedIndex: findFirstOpenCell(puzzle.puzzle),
@@ -47,6 +48,7 @@ export function loadGame() {
     return {
       ...parsed,
       notes: parsed.notes.map((values) => new Set(values)),
+      hintedIndexes: Array.isArray(parsed.hintedIndexes) ? parsed.hintedIndexes : [],
       undoStack: (parsed.undoStack ?? []).map(deserializeSnapshot),
       redoStack: (parsed.redoStack ?? []).map(deserializeSnapshot),
       startedAt: parsed.completedAt || parsed.pausedAt ? parsed.startedAt : Date.now() - parsed.elapsedBeforePause,
@@ -58,6 +60,11 @@ export function loadGame() {
 }
 
 export function saveGame(state) {
+  if (state.completedAt) {
+    clearSavedGame();
+    return;
+  }
+
   const serializable = {
     ...state,
     notes: state.notes.map((values) => [...values]),
@@ -98,6 +105,10 @@ export function placeValue(state, value) {
 
   if (value === 0) {
     return clearCell(state, index);
+  }
+
+  if (completedNumbers(state).includes(value)) {
+    return { ...state, message: `All ${value}s are already placed.` };
   }
 
   if (state.notesMode) {
@@ -160,6 +171,7 @@ export function applyHint(state) {
     selectedIndex: index,
     grid,
     notes,
+    hintedIndexes: addUniqueIndex(state.hintedIndexes, index),
     hints: state.hints + 1,
     message: `Hint placed ${value}.`
   });
@@ -178,6 +190,7 @@ export function resetGame(state) {
     ...state,
     grid: state.puzzle.slice(),
     notes: createEmptyNotes(),
+    hintedIndexes: [],
     undoStack: [],
     redoStack: [],
     selectedIndex: findFirstOpenCell(state.puzzle),
@@ -261,12 +274,34 @@ export function difficultyLabel(difficulty) {
   return DIFFICULTIES[difficulty]?.label ?? DIFFICULTIES.medium.label;
 }
 
+export function completedNumbers(state) {
+  const numbers = [];
+  for (let number = 1; number <= 9; number += 1) {
+    const correctCount = state.grid.filter((value, index) => (
+      value === number && state.solution[index] === number
+    )).length;
+    if (correctCount >= 9) {
+      numbers.push(number);
+    }
+  }
+  return numbers;
+}
+
 export function score(state) {
-  const base = DIFFICULTY_SCORE[state.difficulty] ?? DIFFICULTY_SCORE.medium;
-  const timePenalty = Math.floor(elapsedSeconds(state) / 5);
-  const mistakePenalty = state.mistakes * 75;
-  const hintPenalty = state.hints * 150;
-  return Math.max(0, base - timePenalty - mistakePenalty - hintPenalty);
+  const scoring = DIFFICULTY_SCORING[state.difficulty] ?? DIFFICULTY_SCORING.medium;
+  const hintedIndexes = new Set(state.hintedIndexes ?? []);
+  const correctManualCells = state.grid.reduce((count, value, index) => {
+    if (
+      state.puzzle[index] === 0 &&
+      value === state.solution[index] &&
+      !hintedIndexes.has(index)
+    ) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
+
+  return correctManualCells * scoring.cell + speedBonus(state, scoring);
 }
 
 export function shareText(state) {
@@ -313,6 +348,20 @@ function removePeerNotes(notes, index, value) {
   }
 }
 
+function addUniqueIndex(indexes = [], index) {
+  return indexes.includes(index) ? indexes.slice() : [...indexes, index];
+}
+
+function speedBonus(state, scoring) {
+  if (!state.completedAt) {
+    return 0;
+  }
+
+  const seconds = elapsedSeconds(state);
+  const remainingRatio = Math.max(0, (scoring.targetSeconds - seconds) / scoring.targetSeconds);
+  return Math.round(scoring.speed * remainingRatio);
+}
+
 function findFirstOpenCell(puzzle) {
   const index = puzzle.findIndex((value) => value === 0);
   return index === -1 ? 0 : index;
@@ -331,6 +380,7 @@ function createSnapshot(state) {
   return {
     grid: state.grid.slice(),
     notes: cloneNotes(state.notes),
+    hintedIndexes: (state.hintedIndexes ?? []).slice(),
     selectedIndex: state.selectedIndex,
     mistakes: state.mistakes,
     hints: state.hints,
@@ -342,6 +392,7 @@ function restoreSnapshot(snapshot) {
   return {
     grid: snapshot.grid.slice(),
     notes: cloneNotes(snapshot.notes),
+    hintedIndexes: (snapshot.hintedIndexes ?? []).slice(),
     selectedIndex: snapshot.selectedIndex,
     mistakes: snapshot.mistakes,
     hints: snapshot.hints,
