@@ -80,19 +80,17 @@ Then open:
 http://localhost:8080
 ```
 
-The Gitea Actions workflow builds and pushes versioned images, then updates the
+The GitHub Actions workflow builds and pushes versioned images, then updates the
 image tag in the GitOps repository. Set these repository variables and secrets
 before enabling the workflow:
 
 - `IMAGE_REPOSITORY`: full image repository, for example
   `docker.io/emaydannikov/sudoku`
 - `REGISTRY_HOST`: registry hostname, for example `registry.example.com`
-- `GITOPS_REPO_URL`: GitOps repository clone URL, for example
-  `http://gitea-http.gitea.svc.cluster.local:3000/shake/personal-argocd.git`
 - `REGISTRY_USERNAME`: registry username secret
 - `REGISTRY_PASSWORD`: registry password or token secret
-- `GITOPS_USERNAME`: Gitea username secret with push access to the GitOps repo
-- `GITOPS_TOKEN`: Gitea token secret with push access to the GitOps repo
+- `GITOPS_SSH_KEY`: private part of a write-enabled Deploy Key scoped to
+  `maidannikov/k3s.home.argocd`
 
 The Kubernetes deployment is managed through ArgoCD:
 

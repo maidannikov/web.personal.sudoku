@@ -1,0 +1,92 @@
+name: container
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sudoku-delivery
+  cancel-in-progress: false
+
+env:
+  IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY }}
+  GITOPS_VALUES_FILE: sudoku/values.yaml
+
+jobs:
+  build-publish-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout application
+        uses: actions/checkout@v6
+
+      - name: Validate configuration
+        env:
+          REGISTRY_HOST: ${{ vars.REGISTRY_HOST }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          GITOPS_SSH_KEY: ${{ secrets.GITOPS_SSH_KEY }}
+        run: |
+          set -eu
+          required_vars="IMAGE_REPOSITORY REGISTRY_HOST REGISTRY_USERNAME REGISTRY_PASSWORD GITOPS_SSH_KEY"
+          for name in $required_vars; do
+            if [ -z "$(eval "printf '%s' \"\${$name}\"")" ]; then
+              echo "Missing required Actions variable or secret: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Test
+        run: npm test
+
+      - name: Build static bundle
+        run: npm run build
+
+      - name: Set image tag
+        run: echo "IMAGE_TAG=1.1.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: Build image
+        run: docker build --tag "${IMAGE_REPOSITORY}:${IMAGE_TAG}" .
+
+      - name: Log in to registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "${{ vars.REGISTRY_HOST }}" --username "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Push image
+        run: docker push "${IMAGE_REPOSITORY}:${IMAGE_TAG}"
+
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v6
+        with:
+          repository: maidannikov/k3s.home.argocd
+          ssh-key: ${{ secrets.GITOPS_SSH_KEY }}
+          path: gitops
+
+      - name: Update GitOps image tag
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          set -eu
+          cd gitops
+
+          if [ ! -f "${GITOPS_VALUES_FILE}" ]; then
+            echo "GitOps values file ${GITOPS_VALUES_FILE} is missing" >&2
+            exit 1
+          fi
+
+          sed -i "/^image:/,/^[^ ]/ s/^  tag:.*/  tag: ${IMAGE_TAG}/" "${GITOPS_VALUES_FILE}"
+
+          git add "${GITOPS_VALUES_FILE}"
+          if git diff --cached --quiet; then
+            echo "GitOps image tag is already ${IMAGE_TAG}"
+            exit 0
+          fi
+
+          git commit -m "Update Sudoku image to ${IMAGE_TAG}"
+          git push origin HEAD:main
