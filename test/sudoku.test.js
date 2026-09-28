@@ -8,7 +8,7 @@ import {
   getConflicts,
   isComplete,
   isValidPlacement
-} from "../src/sudoku.js";
+} from "../web/src/sudoku.js";
 import {
   applyHint,
   completedNumbers,
@@ -25,7 +25,7 @@ import {
   toggleNotesMode,
   togglePause,
   undo
-} from "../src/game-state.js";
+} from "../web/src/game-state.js";
 
 test("generatePuzzle creates a uniquely solvable puzzle", () => {
   const puzzle = generatePuzzle("easy", seededRandom(42));

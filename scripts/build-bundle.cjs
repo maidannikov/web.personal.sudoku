@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const root = path.join(__dirname, "..", "src");
+const root = path.join(__dirname, "..", "web", "src");
 
 function stripModuleSyntax(file) {
   let source = fs.readFileSync(path.join(root, file), "utf8");

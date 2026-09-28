@@ -1,11 +1,11 @@
 {
-  "name": "sudoku-challenge",
+  "name": "sudoku-studio",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/build-bundle.cjs",
-    "start": "python3 -m http.server 4173",
+    "start": "python3 -m http.server 4173 --directory web",
     "test": "node --test"
   }
 }

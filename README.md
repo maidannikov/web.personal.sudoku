@@ -1,9 +1,9 @@
 # Sudoku Studio
 
-Sudoku Studio is a polished browser Sudoku game built for the AI-Native
-Development Challenge. It demonstrates a complete AI-assisted workflow:
-requirements, planning, architecture, implementation, tests, documentation,
-iteration, and homelab deployment.
+Sudoku Studio is a polished browser Sudoku game, built end-to-end as a personal
+project: requirements, planning, architecture, implementation, tests,
+documentation, iteration, and homelab deployment. See [docs/](./docs) for the
+full spec, architecture, and retrospective.
 
 ## Play Online
 
@@ -49,28 +49,15 @@ Then open:
 http://localhost:4173
 ```
 
-## Screenshots
-
-Screenshots should be captured after the final UI pass and committed under
-`docs/screenshots/`.
-
-Suggested set:
-
-- `docs/screenshots/mobile-start.png`: mobile difficulty selection screen.
-- `docs/screenshots/mobile-game.png`: mobile game board screen.
-- `docs/screenshots/desktop-game.png`: desktop game layout.
-
-Once the files are captured, add them here as regular Markdown images.
-
 ## Homelab Deployment
 
-The game is packaged as an nginx container image and deployed from the
-`personal-argocd` GitOps repository.
+The game is packaged as an nginx container image and deployed via GitOps/ArgoCD
+to a home k3s cluster, exposed publicly through a Cloudflare Tunnel.
 
 Build and run the image locally:
 
 ```sh
-docker build -t sudoku-app:local .
+docker build --file deploy/Dockerfile -t sudoku-app:local .
 docker run --rm -p 8080:80 sudoku-app:local
 ```
 
@@ -80,44 +67,13 @@ Then open:
 http://localhost:8080
 ```
 
-The GitHub Actions workflow builds and pushes versioned images, then updates the
-image tag in the GitOps repository. Set these repository variables and secrets
-before enabling the workflow:
+On every push to `main`, a GitHub Actions workflow builds and pushes a
+versioned image, then updates the image tag in the
+[k3s.home.argocd](https://github.com/maidannikov/k3s.home.argocd) GitOps
+repository, which ArgoCD picks up and syncs to the cluster.
 
-- `IMAGE_REPOSITORY`: full image repository, for example
-  `docker.io/emaydannikov/sudoku`
-- `REGISTRY_HOST`: registry hostname, for example `registry.example.com`
-- `REGISTRY_USERNAME`: registry username secret
-- `REGISTRY_PASSWORD`: registry password or token secret
-- `GITOPS_SSH_KEY`: private part of a write-enabled Deploy Key scoped to
-  `maidannikov/k3s.home.argocd`
+## Project Docs
 
-The Kubernetes deployment is managed through ArgoCD:
-
-```sh
-kubectl apply -f argocd-apps/sudoku.yaml
-```
-
-Cloudflare Tunnel points the public hostname to:
-
-```text
-http://sudoku.sudoku.svc.cluster.local:80
-```
-
-Public URL:
-
-```text
-https://sudoku.maidannikov.site
-```
-
-Current in-cluster service health check:
-
-```text
-http://sudoku.sudoku.svc.cluster.local:80 -> HTTP 200
-```
-
-## Challenge Docs
-
-- [SPEC.md](./SPEC.md)
-- [ARCHITECTURE.md](./ARCHITECTURE.md)
-- [RETROSPECTIVE.md](./RETROSPECTIVE.md)
+- [docs/SPEC.md](./docs/SPEC.md)
+- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- [docs/RETROSPECTIVE.md](./docs/RETROSPECTIVE.md)

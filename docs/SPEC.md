@@ -51,8 +51,8 @@ Every generated puzzle must have exactly one solution.
 - The app can be served as static files.
 - A public demo URL is documented in `README.md`.
 - The Kubernetes deployment serves the app through a ClusterIP service.
-- Required challenge documentation exists: `README.md`, `SPEC.md`,
-  `ARCHITECTURE.md`, and `RETROSPECTIVE.md`.
+- Required documentation exists: `README.md`, `docs/SPEC.md`,
+  `docs/ARCHITECTURE.md`, and `docs/RETROSPECTIVE.md`.
 
 ## Non-Goals
 

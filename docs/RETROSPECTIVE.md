@@ -7,7 +7,7 @@
 
 ## Development Workflow
 
-1. Clarified the challenge type, hosting target, and game idea.
+1. Clarified the project scope, hosting target, and game idea.
 2. Created a plan with scoped deliverables and homelab deployment.
 3. Implemented the game as a static browser app with isolated game logic.
 4. Added unit tests for generator and state behavior.
@@ -19,10 +19,9 @@
 ## Validation
 
 - Unit tests: `npm test`
-- Image build: `docker build -t sudoku-app:local .`
-- Manifest render: `helm template sudoku personal-argocd/sudoku`
-- Homelab smoke test: in-cluster curl to
-  `http://sudoku.sudoku.svc.cluster.local:80` returned `HTTP 200`.
+- Image build: `docker build --file deploy/Dockerfile -t sudoku-app:local .`
+- Manifest render: `helm template sudoku k3s.home.argocd/sudoku`
+- Homelab smoke test: in-cluster health check returned `HTTP 200`.
 
 ## What Worked Well
 
@@ -61,11 +60,10 @@ Initial implementation and documentation: about 1-2 focused hours.
 
 ## What I Would Do Differently Next Time
 
-- Create the dedicated application repo at the start if the submission target is
-  already known.
-- Add final screenshots for mobile start, mobile game, and desktop game before
-  submitting the corporate repository.
-- Add GitLab Pages as an additional one-click demo path.
+- Create the dedicated application repo at the start rather than migrating
+  later.
+- Capture screenshots as part of the initial UI pass instead of leaving them
+  for a later cleanup.
 
 ## Key Lessons Learned
 

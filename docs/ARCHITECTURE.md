@@ -8,7 +8,7 @@
 - Helm chart consumed by ArgoCD from the GitOps repository.
 
 The source is kept as small ES modules for readability and tests, then bundled
-into `src/bundle.js` for browser delivery. This avoids runtime module-loading
+into `web/src/bundle.js` for browser delivery. This avoids runtime module-loading
 surprises in locked-down mobile browsers while keeping the code reviewable.
 
 ## Runtime Architecture
@@ -25,13 +25,13 @@ flowchart LR
 
 ## Modules
 
-- `src/sudoku.js`: Sudoku generation, solver, uniqueness checks, conflicts, and
+- `web/src/sudoku.js`: Sudoku generation, solver, uniqueness checks, conflicts, and
   peer calculations.
-- `src/game-state.js`: game state transitions, notes mode, hints, timer state,
+- `web/src/game-state.js`: game state transitions, notes mode, hints, timer state,
   reset, and local storage persistence.
-- `src/app.js`: DOM rendering, start/game screen flow, controls, keyboard
+- `web/src/app.js`: DOM rendering, start/game screen flow, controls, keyboard
   handling, and visual feedback.
-- `src/bundle.js`: generated browser bundle produced by `npm run build`.
+- `web/src/bundle.js`: generated browser bundle produced by `npm run build`.
 - `scripts/build-bundle.cjs`: small build script that combines the source
   modules into the browser bundle.
 
@@ -67,7 +67,7 @@ separate release lifecycles.
 
 ## Design Decisions
 
-- Use static assets to keep the challenge small and deployable as a simple image.
+- Use static assets to keep the project small and deployable as a simple image.
 - Keep game logic independent from the DOM so it can be unit tested.
 - Use a two-screen UI so difficulty selection and gameplay do not compete for
   space on mobile or desktop.
